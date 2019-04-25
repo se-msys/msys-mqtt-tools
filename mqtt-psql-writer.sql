@@ -1,0 +1,17 @@
+#
+# Table templates
+#
+
+CREATE TABLE topic (
+	id SERIAL PRIMARY KEY,
+	topic VARCHAR UNIQUE NOT NULL
+);
+
+CREATE TABLE payload (
+	id SERIAL PRIMARY KEY,
+	ts TIMESTAMP DEFAULT NOW(),
+	topic_id INTEGER NOT NULL,
+	value NUMERIC(24, 3) NULL,
+	payload VARCHAR NULL
+);
+
