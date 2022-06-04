@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 #
 # mqtt-psql-writer
-# adam@msys.se 2019
+# mada@msys.se 2022
 #
 import os
 import sys
 import logging
 import json
+from re import match
 from datetime import datetime
 import paho.mqtt.client as mqtt
 import postgresql
@@ -20,8 +21,8 @@ class MqttPsqlWriter():
         log.info("msys mqtt-psql-writer")
         self.client = None
         self.mqtt_topic = os.getenv('MQTT_TOPIC', '/#')
-        self.sqlt_topic = os.getenv('SQL_INSERT_TOPIC', "INSERT INTO topic (topic) VALUES ($1)")
-        self.sqlt_payload = os.getenv('SQL_INSERT_PAYLOAD', "INSERT INTO payload (topic_id,value,payload) VALUES ((SELECT id FROM topic WHERE topic=$1), $2, $3)")
+        self.sqlt_topic = os.getenv('SQL_INSERT_TOPIC', "INSERT INTO topic (name) VALUES ($1)")
+        self.sqlt_payload = os.getenv('SQL_INSERT_PAYLOAD', "INSERT INTO payload (topic_id,value,payload) VALUES ((SELECT id FROM topic WHERE name=$1), $2, $3)")
         self.pg_url = os.getenv('PG_URL', 'pq://postgres@localhost/mqtt')
         self.db = None
 

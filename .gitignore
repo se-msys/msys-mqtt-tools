@@ -108,5 +108,8 @@ paho
 output-*
 *.csv
 .DS_Store
-
+out/
+tmp/
+test/
+filepumper.py
 

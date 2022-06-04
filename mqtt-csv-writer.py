@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 #
 # mqtt-csv-writer
-# adam@msys.se 2019
+# mada@msys.se 2022
 #
 import os
 import sys
 import logging
 import json
+from re import match
 from datetime import datetime
 import paho.mqtt.client as mqtt
 
@@ -14,18 +15,39 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-6s [%(m
 log = logging.getLogger(__name__)
 
 
+"""
+    MQTT CSV Writer
+"""
 class MqttCsvWriter():
     def __init__(self):
         log.info("msys mqtt-csv-writer")
         self.client = None
-        self.mqtt_topic = os.getenv('MQTT_TOPIC', '/some/topic')
+        self.mqtt_topic = os.getenv('MQTT_TOPIC', '/#')
         self.csv_format = os.getenv('CSV_FORMAT', '{timestamp};{topic};{payload}\n')
-        self.csv_header = os.getenv('CSV_HEADER', 'date;time;topic;payload\n')
-        self.dt_format = os.getenv('DT_FORMAT', '%Y-%m-%d;%H:%M:%S')
-        self.csv_delim = os.getenv('CSV_DELIM', ';')
+        self.csv_header = os.getenv('CSV_HEADER', 'timestamp;topic;payload\n')
         self.csv_file_pattern = os.getenv('CSV_OUTPUT', 'output-%Y%m%d.csv')
-        self.csv_write_header = True
         self.fcsv = None
+
+
+    def csv_out(self, msg):
+        dt = datetime.utcnow()
+        csv_file = dt.strftime(self.csv_file_pattern)
+        out = self.csv_format.format(timestamp=dt.isoformat(), topic=msg.topic, payload=msg.payload.decode('utf-8'))
+        
+        # check if file exists
+        if os.path.exists(csv_file):
+            log.debug('appending to existing file %s', csv_file)
+
+            with open(csv_file, 'a') as f:
+                f.write(out)
+
+        else:
+            log.info('creating new file %s', csv_file)
+
+            with open(csv_file, 'w') as f:
+                f.write(self.csv_header)
+                f.write(out)
+
 
     def connect(self):
         self.client = mqtt.Client()
@@ -38,67 +60,20 @@ class MqttCsvWriter():
         )
         self.client.loop_forever()
     
+
     def on_connect(self, client, userdata, flags, rc):
-        log.info("connected to mqtt server")
+        log.info("connected to mqtt broker")
         self.client.subscribe(self.mqtt_topic)
         
+
     def on_message(self, client, userdata, msg):
         log.debug('topic %r, payload %r', msg.topic, msg.payload)
-
-        if str(msg.payload).endswith('/json'):
-            self.csv_out_json(msg)
-        else:
-            self.csv_out_plain(msg)
-
-        # set header done
-        self.csv_write_header = False
-
-    def csv_out_plain(self, msg):
-        dt = datetime.now().strftime(self.dt_format)
-        csv_file = datetime.now().strftime(self.csv_file_pattern)
-        out = str(self.csv_format).format(timestamp=str(dt), topic=str(msg.topic), payload=float(msg.payload))
-        log.debug(out)
-        
-        # check if file exists
-        if os.path.exists(csv_file):
-            # open if needed
-            if self.fcsv is None:
-                self.fcsv = open(csv_file, 'a')
-        else:
-            # close old file
-            if self.fcsv: self.fcsv.close()
-
-            # open new for writing
-            self.fcsv = open(csv_file, 'w')
-
-            # write header
-            if self.csv_write_header:
-                self.fcsv.write(self.csv_header)
-
-        # write line
-        self.fcsv.write(out)
-
-    def csv_out_json(self, msg):
-        j = json.loads(msg.payload)
-        log.info(repr(j))
-
-        # write header
-        if self.csv_write_header:
-            cols = []
-            for key,value in j.items():
-                cols.append(key)
-            print(cols.join(';'))
-
-        # write values
-        cols = []
-        for key,value in j.items():
-            cols.append(value)
-
-        print(cols.join(';'))
+        self.csv_out(msg)
 
 
     def close(self):
-        self.fcsv.close()
+        pass
+
 
     def run(self):
         self.connect()
