@@ -111,5 +111,6 @@ output-*
 out/
 tmp/
 test/
+old/
 filepumper.py
 

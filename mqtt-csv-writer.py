@@ -6,11 +6,11 @@
 import os
 import sys
 import logging
-import json
-from re import match
 from datetime import datetime
 import paho.mqtt.client as mqtt
 
+
+# setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-6s [%(module)s::%(funcName)s] %(message)s")
 log = logging.getLogger(__name__)
 
@@ -26,7 +26,12 @@ class MqttCsvWriter():
         self.csv_format = os.getenv('CSV_FORMAT', '{timestamp};{topic};{payload}\n')
         self.csv_header = os.getenv('CSV_HEADER', 'timestamp;topic;payload\n')
         self.csv_file_pattern = os.getenv('CSV_OUTPUT', 'output-%Y%m%d.csv')
-        self.fcsv = None
+
+        log.info('Current settings:')
+        log.info('  topic      %s', self.mqtt_topic)
+        log.info('  header     %r', self.csv_header)
+        log.info('  format     %r', self.csv_format)
+        log.info('  output     %s', self.csv_file_pattern)
 
 
     def csv_out(self, msg):
@@ -36,13 +41,14 @@ class MqttCsvWriter():
         
         # check if file exists
         if os.path.exists(csv_file):
-            log.debug('appending to existing file %s', csv_file)
+            log.debug('appending to existing file "%s"', csv_file)
 
             with open(csv_file, 'a') as f:
                 f.write(out)
 
+        # else create new
         else:
-            log.info('creating new file %s', csv_file)
+            log.info('creating new file "%s"', csv_file)
 
             with open(csv_file, 'w') as f:
                 f.write(self.csv_header)

@@ -6,16 +6,19 @@
 import os
 import sys
 import logging
-import json
-from re import match
 from datetime import datetime
 import paho.mqtt.client as mqtt
 import postgresql
 
+
+# logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-6s [%(module)s::%(funcName)s] %(message)s")
 log = logging.getLogger(__name__)
 
 
+"""
+    MqttPsqlWriter
+"""
 class MqttPsqlWriter():
     def __init__(self):
         log.info("msys mqtt-psql-writer")
@@ -47,14 +50,7 @@ class MqttPsqlWriter():
             int(os.getenv('MQTT_TIMEOUT', 3)),
         )
         self.client.loop_forever()
-    
-    def on_connect(self, client, userdata, flags, rc):
-        log.info("connected to mqtt server")
-        self.client.subscribe(self.mqtt_topic)
-        
-    def on_message(self, client, userdata, msg):
-        log.debug('topic %r, payload %r', msg.topic, msg.payload)
-        self.insert(msg)
+
 
     def insert(self, msg):
         # prepare statements
@@ -88,8 +84,20 @@ class MqttPsqlWriter():
         except:
             log.error('unable to insert values')
 
+
+    def on_connect(self, client, userdata, flags, rc):
+        log.info("connected to mqtt server")
+        self.client.subscribe(self.mqtt_topic)
+
+        
+    def on_message(self, client, userdata, msg):
+        log.debug('topic %r, payload %r', msg.topic, msg.payload)
+        self.insert(msg)
+
+
     def close(self):
         self.db.close()
+
 
     def run(self):
         self.connect()
