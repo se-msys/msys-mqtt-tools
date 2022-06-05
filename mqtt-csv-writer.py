@@ -28,17 +28,18 @@ class MqttCsvWriter():
         self.csv_file_pattern = os.getenv('CSV_OUTPUT', 'output-%Y%m%d.csv')
 
         log.info('Current settings:')
-        log.info('  topic      %s', self.mqtt_topic)
-        log.info('  header     %r', self.csv_header)
-        log.info('  format     %r', self.csv_format)
-        log.info('  output     %s', self.csv_file_pattern)
+        log.info('  topic         %s', self.mqtt_topic)
+        log.info('  header        %r', self.csv_header)
+        log.info('  format        %r', self.csv_format)
+        log.info('  output_file   %r', self.csv_file_pattern)
 
 
     def csv_out(self, msg):
         dt = datetime.utcnow()
-        csv_file = dt.strftime(self.csv_file_pattern)
+        topic_dashed = msg.topic.replace('/', '-')
         out = self.csv_format.format(timestamp=dt.isoformat(), topic=msg.topic, payload=msg.payload.decode('utf-8'))
-        
+        csv_file = dt.strftime(self.csv_file_pattern).format(topic=topic_dashed)
+
         # check if file exists
         if os.path.exists(csv_file):
             log.debug('appending to existing file "%s"', csv_file)
