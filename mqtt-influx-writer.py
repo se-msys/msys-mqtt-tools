@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # mqtt-influx-writer
-# adam@msys.se 2019-2022
+# mada@msys.se 2022
 #
 import os
 import sys
